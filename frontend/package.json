@@ -1,0 +1,33 @@
+{
+  "name": "positioning-knowledge-map",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "build:server": "tsc --noEmit && vite build --mode server",
+    "dev:server": "vite --mode server --host 127.0.0.1",
+    "test:static": "node ../scripts/static-pages-qa.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "test:mobile": "node ../scripts/mobile-2d-qa.mjs"
+  },
+  "dependencies": {
+    "d3-force": "3.0.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router-dom": "7.18.4"
+  },
+  "devDependencies": {
+    "@types/d3-force": "3.0.10",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "playwright": "1.62.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.3"
+  }
+}

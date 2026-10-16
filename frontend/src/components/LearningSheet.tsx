@@ -1,0 +1,22 @@
+import {useEffect,useRef} from 'react';
+import {createPortal} from 'react-dom';
+import {Link} from 'react-router-dom';
+import {knowledgeDetails} from '../data/knowledge-details';
+import {graphNodes,graphLinks} from '../data/graph-structure';
+import {comparisons} from '../data/comparisons';
+import {Icon} from './Icon';
+import {TouchButton} from './TouchButton';
+export function LearningSheet({id,onClose,onSelect}:{id:string;onClose():void;onSelect(id:string):void}){
+  const dialog=useRef<HTMLDivElement>(null),close=useRef<HTMLButtonElement>(null);
+  const node=graphNodes.find(n=>n.id===id),detail=knowledgeDetails.find(d=>d.id===node?.contentId),comparison=id.startsWith('relation:')?comparisons[id.slice(9)]:undefined;
+  const title=detail?.title??comparison?.title??node?.title??'知识讲解';
+  useEffect(()=>{
+    const root=document.getElementById('root'),previous=document.activeElement as HTMLElement;if(root)root.inert=true;close.current?.focus({preventScroll:true});
+    const key=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose();if(e.key!=='Tab')return;const targets=dialog.current?.querySelectorAll<HTMLElement>('button,a[href],[tabindex="0"]');if(!targets?.length)return;const first=targets[0],last=targets[targets.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}};
+    document.addEventListener('keydown',key);return()=>{if(root)root.inert=false;document.removeEventListener('keydown',key);(document.querySelector<HTMLElement>(`[data-node="${id}"]`)??previous)?.focus({preventScroll:true});};
+  },[id,onClose]);
+  return createPortal(<div className="sheet-overlay"><div className="sheet-backdrop" onClick={onClose} aria-hidden="true"/><div className="learning-sheet" ref={dialog} role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div className="sheet-handle" aria-hidden="true"/><header className="sheet-header"><div><span>{comparison?'跨方法比较':node?.kind==='detail'?`${node.methodId?.toUpperCase()} / 教材知识点`:'定位方法 / 知识概览'}</span><h2 id="sheet-title">{title}</h2></div><TouchButton ref={close} className="sheet-close" onActivate={onClose} aria-label="关闭知识内容"><Icon name="close" size={23}/></TouchButton></header>
+    <div className="sheet-content" key={id} tabIndex={0} aria-label="可滚动的教材内容">
+      {detail?<><span className="source-status">教材整理 · 保留原文出处</span><p className="lesson-intro">{detail.summary}</p><h3>理解原理</h3>{detail.paragraphs.map((p,i)=><p className="lesson-paragraph" key={i}>{p}</p>)}{detail.formulas?.map((f,i)=><section key={i}><h3>{i===0?'公式与符号':'相关公式'}</h3><div className="lesson-formula">{f.text}</div><p className="formula-symbols">{f.symbols}</p></section>)}{detail.figures?.map(f=><figure className="textbook-figure" key={f.src}><a href={f.src} target="_blank" rel="noreferrer" aria-label={`打开原图：${f.caption}`}><img src={f.src} alt={f.alt} loading="lazy" decoding="async"/></a><figcaption>{f.caption}<br/>点击图片可查看清晰原图</figcaption></figure>)}<h3>理解时留意</h3><p>{detail.note}</p><div className="lesson-source"><Icon name="book" size={17}/><div><strong>《物联网导论（第4版）》</strong><p>{detail.source}</p></div></div><p className="lesson-end">本知识点用于教材阅读，不单独计算学习评价。</p><div className="lesson-actions"><Link className="button primary" to={`/practice/${node?.methodId}`}>练习 {node?.methodId?.toUpperCase()} 模块</Link><Link className="text-link" to="/test">进入正式测试 →</Link></div></>:comparison?<><p className="lesson-intro">{comparison.summary}</p>{comparison.items.map(item=><section key={item.title}><h3>{item.title}</h3><p>{item.text}</p></section>)}<div className="concept-jumps">{graphLinks.find(l=>l.id===id.slice(9))&&[graphLinks.find(l=>l.id===id.slice(9))!.source,graphLinks.find(l=>l.id===id.slice(9))!.target].map(target=><TouchButton key={target} onActivate={()=>onSelect(target)}>{graphNodes.find(n=>n.id===target)?.title} →</TouchButton>)}</div><div className="lesson-source">教材依据：{comparison.source}</div></>:node?.kind==='detail'?<p>教材内容正在核对。</p>:<><p className="lesson-intro">{node?.kind==='center'?'从距离、距离差、信号特征与到达角四种线索，理解如何确定目标的位置。':'选择下列知识点，逐步阅读本模块的教材原理。'}</p><div className="concept-jumps">{graphNodes.filter(n=>n.parentId===id).map(n=><TouchButton key={n.id} onActivate={()=>onSelect(n.id)}>{n.title}<Icon name="arrow" size={16}/></TouchButton>)}</div>{node?.methodId&&<Link className="button primary" to={`/practice/${node.methodId}`}>进入 {node.title} 模块练习</Link>}<p className="lesson-end">阅读和练习不改变学习等级；评价规则沿用现有测试逻辑。</p></>}
+    </div></div></div>,document.body);
+}
